@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zolhin Bank - Güvenli Giriş, Kayıt ve Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Iconları -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        /* Karanlık Mod Özel Renkleri */
+        .dark body { background-color: #1a1c1e; }
+        .dark .bg-main-container { background-color: #202224; }
+        .dark .bg-card-custom { background-color: #26292b; }
+        .dark .bg-input-custom { background-color: #1e2022; }
+        .dark .text-custom-white { color: #e5e7eb; }
+        .dark .bg-login-card { background-color: #202224; border-color: #2d3135; }
+
+        /* Aydınlık Mod Özel Renkleri */
+        .light body { background-color: #d6d5d0; }
+        .light .bg-main-container { background-color: #f3f2ed; }
+        .light .bg-card-custom { background-color: #e6e5e0; }
+        .light .bg-input-custom { background-color: #ffffff; }
+        .light .text-custom-white { color: #1f2937; }
+        .light .bg-login-card { background-color: #e6e5e0; border-color: #d1d0ca; }
+    </style>
+</head>
+<body class="dark text-gray-200 min-h-screen p-4 md:p-6 flex flex-col items-center justify-center relative">
+
+    <!-- Faiz Bildirim Kutusu -->
+    <div id="faizToast" class="fixed top-4 right-4 bg-amber-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-xl z-50 transition-all opacity-0 pointer-events-none flex items-center gap-2">
+        <i class="fa-solid fa-percent animate-spin"></i> Kredi borcuna simüle edilmiş günlük faiz (%0.5) applied!
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 1. GİRİŞ & KAYIT KONTEYNERİ (AUTH SCREEN)  -->
+    <!-- ========================================== -->
+    <div id="authScreen" class="w-full max-w-md bg-login-card p-8 rounded-2xl shadow-2xl border flex flex-col gap-6 relative transition-all">
+        <!-- Giriş/Kayıt Ekranı Tema Değiştirici -->
+        <button id="themeToggleLogin" type="button" class="absolute top-4 right-4 bg-gray-800/40 dark:bg-gray-700/40 p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20">
+            <i class="fa-solid fa-moon dark:hidden"></i>
+            <i class="fa-solid fa-sun hidden dark:inline"></i>
+        </button>
+
+        <!-- Logo ve Başlık -->
+        <div class="flex flex-col items-start gap-1">
+            <div class="flex items-center gap-2 text-xl font-bold tracking-wider text-[#b89742]">
+                <i class="fa-solid fa-building-columns"></i>
+                <span>ZOLHİN <span class="text-gray-400 dark:text-gray-500">BANK</span></span>
+            </div>
+            <p id="authSubtitle" class="text-sm text-gray-400 dark:text-gray-400 font-medium mt-2">Hesabınıza giriş yapın</p>
+        </div>
+
+        <!-- 1A. GİRİŞ FORMU -->
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">Kullanıcı Adı</label>
+                <input type="text" id="loginUsername" placeholder="kullanici_adi" required class="w-full bg-input-custom border border-gray-800/60 dark:border-gray-700/50 rounded-lg px-3 py-2.5 text-sm text-custom-white focus:outline-none focus:border-[#b89742]">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">Şifre</label>
+                <div class="relative">
+                    <input type="password" id="loginPassword" placeholder="••••••••" required class="w-full bg-input-custom border border-gray-800/60 dark:border-gray-700/50 rounded-lg px-3 py-2.5 text-sm text-custom-white focus:outline-none focus:border-[#b89742] pr-10">
+                    <button type="button" id="togglePasswordVisibility" class="absolute right-3 top-3 text-gray-500 hover:text-gray-300">
+                        <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="loginError" class="text-xs text-red-500 font-medium hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Kullanıcı adı veya şifre hatalı!</div>
+            
+            <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg text-sm transition-colors mt-4 shadow-lg shadow-emerald-500/20">
+                Giriş Yap
+            </button>
+
+            <div class="text-center mt-4">
+                <p class="text-xs text-gray-400">Hesabın yok mu? <a href="#" id="toRegisterBtn" class="text-[#b89742] hover:underline font-semibold">Kayıt Ol</a></p>
+            </div>
+        </form>
+
+        <!-- 1B. KAYIT OLMA FORMU -->
+        <form id="registerForm" class="space-y-4 hidden">
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">Kullanıcı Adı</label>
+                <input type="text" id="regUsername" placeholder="Yeni kullanıcı adı" required class="w-full bg-input-custom border border-gray-800/60 dark:border-gray-700/50 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none focus:border-[#b89742]">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">E-posta Adresi</label>
+                <input type="email" id="regEmail" placeholder="ornek@mail.com" required class="w-full bg-input-custom border border-gray-800/60 dark:border-gray-700/50 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none focus:border-[#b89742]">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">Telefon Numarası</label>
+                <input type="text" id="regPhone" placeholder="0555 111 22 33" required class="w-full bg-input-custom border border-gray-800/60 dark:border-gray-700/50 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none focus:border-[#b89742]">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1">Şifre</label>
+                <input type="password" id="regPassword" placeholder="••••••••" required class="w-full bg-input-custom border border-gray-800/60 dark:border-gray-700/50 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none focus:border-[#b89742]">
+            </div>
+            <div id="regError" class="text-xs text-red-500 font-medium hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Bu kullanıcı adı zaten alınmış!</div>
+
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 rounded-lg text-sm transition-colors mt-2 shadow-lg shadow-blue-500/20">
+                Hesap Oluştur ve Kaydet
+            </button>
+
+            <div class="text-center mt-3">
+                <p class="text-xs text-gray-400">Zaten bir hesabın var mı? <a href="#" id="toLoginBtn" class="text-[#b89742] hover:underline font-semibold">Giriş Yap</a></p>
+            </div>
+        </form>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 2. ANA DASHBOARD PANELİ                    -->
+    <!-- ========================================== -->
+    <div id="dashboardPanel" class="w-full max-w-7xl bg-main-container p-6 rounded-2xl shadow-2xl border border-gray-800/40 hidden transition-all">
+        
+        <!-- ÜST BAR (Header) -->
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-800/40">
+            <div class="text-xl font-bold tracking-wider">
+                <span class="text-green-500">ZOLHİN</span> <span class="text-amber-400">BANK</span>
+            </div>
+            <div class="flex items-center gap-4 md:gap-6 text-sm text-gray-400">
+                <a href="#" class="hover:text-custom-white"><i class="fa-solid fa-chart-pie mr-1"></i> Dashboard</a>
+                <span class="hover:text-custom-white cursor-pointer"><i class="fa-solid fa-user mr-1"></i> <span id="topUsernameDisplay">admin</span></span>
+                <button id="logoutBtn" class="hover:text-red-400 text-gray-500 transition-colors"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Çıkış</button>
+                
+                <!-- Ayarlar Butonu -->
+                <button id="openSettingsBtn" class="bg-card-custom p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+
+                <!-- Dashboard Tema Değiştirici -->
+                <button id="themeToggleDash" class="bg-card-custom p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:inline"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3 SÜTUNLU ANA İÇERİK -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- SOL SÜTUN: Kullanıcı & Hesap Bilgileri -->
+            <div class="lg:col-span-3 bg-card-custom p-5 rounded-xl flex flex-col gap-4 border border-gray-700/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-xl text-white font-bold">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <h3 id="panelUserDisplay" class="font-semibold text-custom-white">Admin Kullanıcı</h3>
+                        <span id="panelRoleDisplay" class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-medium">Admin</span>
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Hesap Bilgileri</h4>
+                    <div class="space-y-3 text-xs">
+                        <div class="flex justify-between py-1 border-b border-gray-800/40">
+                            <span class="text-gray-500">Kullanıcı ID</span>
+                            <span id="displayUserId" class="text-gray-400 font-mono">1</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-800/40">
+                            <span class="text-gray-500">Kullanıcı Adı</span>
+                            <span id="displayUsername" class="text-gray-400">admin</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-800/40">
+                            <span class="text-gray-500">IBAN</span>
+                            <span id="displayIban" class="text-gray-400 font-mono text-[11px] select-all cursor-pointer" title="Kopyalamak için tıklatın">TR44 0001 0009 9999 8888 7777 01</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-800/40">
+                            <span class="text-gray-500">E-posta</span>
+                            <span id="displayEmail" class="text-gray-400">admin@zolhinbank.com</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-800/40">
+                            <span class="text-gray-500">TC Kimlik No</span>
+                            <span class="text-gray-400 font-mono">12345678901</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-800/40">
+                            <span class="text-gray-500">Telefon</span>
+                            <span id="displayPhone" class="text-gray-400 font-mono">0555 111 22 33</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-gray-800/40">
+                            <span class="text-gray-500">Üyelik Tarihi</span>
+                            <span class="text-gray-400 font-mono">01.01.2020</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DÖVİZ & ALTIN YATIRIM HESAP BAKİYELERİ -->
+                <div class="pt-2 border-t border-gray-800/40">
+                    <h4 class="text-xs font-semibold uppercase tracking-wider text-[#b89742] mb-2"><i class="fa-solid fa-vault mr-1"></i> Yatırım Hesaplarım</h4>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between bg-input-custom p-2 rounded-lg">
+                            <span class="text-gray-400 font-medium"><i class="fa-solid fa-dollar-sign mr-1 text-emerald-500"></i> Dolar (USD)</span>
+                            <span id="usdBalanceDisplay" class="font-mono font-bold text-custom-white">0.00 $</span>
+                        </div>
+                        <div class="flex justify-between bg-input-custom p-2 rounded-lg">
+                            <span class="text-gray-400 font-medium"><i class="fa-solid fa-euro-sign mr-1 text-blue-500"></i> Euro (EUR)</span>
+                            <span id="eurBalanceDisplay" class="font-mono font-bold text-custom-white">0.00 €</span>
+                        </div>
+                        <div class="flex justify-between bg-input-custom p-2 rounded-lg">
+                            <span class="text-gray-400 font-medium"><i class="fa-solid fa-coins mr-1 text-amber-500"></i> Altın (ONS)</span>
+                            <span id="goldBalanceDisplay" class="font-mono font-bold text-custom-white">0.00 gr</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hızlı Bakiye Yükleme Paneli (Admin Kontrollü) -->
+                <div id="quickDepositContainer" class="mt-auto pt-4 border-t border-gray-800/40">
+                    <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Hızlı Para Yükle</h4>
+                    <div class="flex gap-2">
+                        <input type="number" id="depositAmount" placeholder="Tutar ₺" class="w-full bg-input-custom border border-gray-800/60 rounded-lg px-2 py-1.5 text-xs text-custom-white focus:outline-none">
+                        <button id="depositBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">Yükle</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORTA SÜTUN: Bakiye, Para Transferi & Kredi Sistemi -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <!-- Hesap Bakiyesi -->
+                <div class="bg-card-custom p-6 rounded-xl border border-gray-700/10 flex justify-between items-center">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-400 mb-2">Hesap Bakiyesi</h4>
+                        <div class="flex items-baseline gap-3">
+                            <span id="bakiyeDisplay" class="text-3xl font-bold tracking-tight text-custom-white">1.245.890,00 ₺</span>
+                            <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-full font-semibold">Vadesiz</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <h4 class="text-xs font-medium text-gray-400 mb-1">Mevcut Kredi Borcu</h4>
+                        <span id="debtDisplay" class="text-lg font-bold text-rose-400">150.000,00 ₺</span>
+                    </div>
+                </div>
+
+                <!-- KREDİ OPERASYONLARI ALANI -->
+                <div class="bg-card-custom p-4 rounded-xl border border-gray-700/10 space-y-4">
+                    <!-- Borç Ödeme -->
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Kredi Borcu Ödeme</h4>
+                        <div class="flex gap-2">
+                            <input type="number" id="payDebtAmount" placeholder="Ödemek istediğin tutar" class="w-full bg-input-custom border border-gray-800/60 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none">
+                            <button id="payDebtBtn" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">Borç Öde</button>
+                        </div>
+                    </div>
+
+                    <!-- Yeni Kredi Çekme -->
+                    <div class="pt-2 border-t border-gray-800/40">
+                        <h4 class="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Yeni Kredi Çek</h4>
+                        <div class="flex gap-2">
+                            <input type="number" id="takeLoanAmount" placeholder="Çekmek istediğin kredi tutarı" class="w-full bg-input-custom border border-gray-800/60 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none">
+                            <button id="takeLoanBtn" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">Kredi Çek</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Para Transferi Formu -->
+                <div class="bg-card-custom p-6 rounded-xl flex-1 border border-gray-700/10">
+                    <h4 class="text-sm font-semibold text-gray-300 mb-4">Para Transferi</h4>
+                    <form id="transferForm" class="space-y-4">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Alıcı IBAN</label>
+                            <input type="text" id="txIban" required placeholder="TR00 0000 0000 0000 0000 0000 00" class="w-full bg-input-custom border border-gray-800/60 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none focus:border-emerald-500 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Tutar (₺)</label>
+                            <input type="number" id="txAmount" required step="0.01" placeholder="0,00" class="w-full bg-input-custom border border-gray-800/60 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Açıklama</label>
+                            <input type="text" id="txDesc" required placeholder="Ödeme açıklaması" class="w-full bg-input-custom border border-gray-800/60 rounded-lg px-3 py-2 text-sm text-custom-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 mt-2">
+                            <i class="fa-solid fa-paper-plane text-xs"></i> Gönder
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SAĞ SÜTUN: Canlı Döviz Piyasası & Son İşlemler -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                <!-- Canlı Borsa -->
+                <div class="bg-card-custom p-4 rounded-xl border border-gray-700/10 flex flex-col gap-3">
+                    <h4 class="text-xs font-semibold text-gray-300 uppercase tracking-wider flex justify-between items-center">
+                        <span><i class="fa-solid fa-chart-line mr-1 text-emerald-500"></i> Canlı Döviz & Altın Piyasası</span>
+                        <span class="text-[10px] text-gray-500 font-mono animate-pulse">Canlı 10s</span>
+                    </h4>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div class="bg-input-custom p-2 rounded-lg border border-gray-800/30">
+                            <div class="text-gray-500 font-semibold">USD/TRY</div>
+                            <div id="usdRate" class="font-mono font-bold text-custom-white mt-1">32.45 ₺</div>
+                            <div id="usdTrend" class="text-[10px] text-emerald-400 font-medium"><i class="fa-solid fa-caret-up"></i> %0.1</div>
+                        </div>
+                        <div class="bg-input-custom p-2 rounded-lg border border-gray-800/30">
+                            <div class="text-gray-500 font-semibold">EUR/TRY</div>
+                            <div id="eurRate" class="font-mono font-bold text-custom-white mt-1">35.12 ₺</div>
+                            <div id="eurTrend" class="text-[10px] text-emerald-400 font-medium"><i class="fa-solid fa-caret-up"></i> %0.2</div>
+                        </div>
+                        <div class="bg-input-custom p-2 rounded-lg border border-gray-800/30">
+                            <div class="text-gray-500 font-semibold">GAU/TRY</div>
+                            <div id="goldRate" class="font-mono font-bold text-custom-white mt-1">2450 ₺</div>
+                            <div id="goldTrend" class="text-[10px] text-rose-400 font-medium"><i class="fa-solid fa-caret-down"></i> %0.05</div>
+                        </div>
+                    </div>
+                    <!-- Döviz Emir Kutusu -->
+                    <div class="bg-input-custom p-3 rounded-lg border border-gray-800/50 space-y-2 text-xs">
+                        <div class="flex gap-2">
+                            <select id="fxAsset" class="bg-main-container text-custom-white border border-gray-800 rounded-md px-2 py-1 flex-1 outline-none">
+                                <option value="USD">Dolar (USD)</option>
+                                <option value="EUR">Euro (EUR)</option>
+                                <option value="GOLD">Altın (GAU)</option>
+                            </select>
+                            <select id="fxType" class="bg-main-container text-custom-white border border-gray-800 rounded-md px-2 py-1 outline-none">
+                                <option value="AL">AL (TL ile)</option>
+                                <option value="SAT">SAT (TL'ye Çevir)</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="fxAmount" placeholder="Miktar (Adet / Gram)" class="bg-main-container text-custom-white border border-gray-800 rounded-md px-2 py-1 flex-1 outline-none">
+                            <button id="fxActionBtn" class="bg-[#b89742] hover:bg-[#a38334] text-white font-medium px-4 py-1 rounded-md transition-colors">İşlemi Yap</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Son İşlemler Listesi -->
+                <div class="bg-card-custom p-5 rounded-xl flex flex-col flex-1 border border-gray-700/10">
+                    <h4 class="text-sm font-semibold text-gray-300 mb-4">Son İşlemler</h4>
+                    <div id="transactionsList" class="space-y-4 overflow-y-auto max-h-[380px] pr-1">
+                        <!-- JS dinamik dolduracak -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- AYARLAR / PROFİL MODAL -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50 transition-all">
+        <div class="w-full max-w-md bg-login-card p-6 rounded-2xl border border-gray-700 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                <h3 class="text-md font-bold text-custom-white"><i class="fa-solid fa-user-gear mr-2 text-amber-500"></i>Profil & Güvenlik Ayarları</h3>
+                <button id="closeSettingsBtn" class="text-gray-400 hover:text-white text-lg">&times;</button>
+            </div>
+            <form id="settingsForm" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">E-posta Adresi</label>
+                    <input type="email" id="settingsEmail" class="w-full bg-input-custom border border-gray-800 rounded-lg px-3 py-2 text-custom-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Telefon Numarası</label>
+                    <input type="text" id="settingsPhone" class="w-full bg-input-custom border border-gray-800 rounded-lg px-3 py-2 text-custom-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Yeni Giriş Şifresi</label>
+                    <input type="password" id="settingsPassword" placeholder="Değiştirmek istemiyorsanız boş bırakın" class="w-full bg-input-custom border border-gray-800 rounded-lg px-3 py-2 text-custom-white focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-2 rounded-lg text-xs transition-colors mt-2">
+                    Değişiklikleri Kaydet
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 3. JAVASCRIPT MANTIĞI                      -->
+    <!-- ========================================== -->
+    <script>
+        // --- 1. SİSTEM BAŞLANGIÇ VERİLERİ ---
+        const VARSAYILAN_BAKİYE = 1245890.00;
+        const VARSAYILAN_BORC = 150000.00;
+        const VARSAYILAN_İŞLEMLER = [
+            { id: 1, baslik: "Faiz Geliri", tarih: "07 Haz 09:00", tutar: 28500.00, tip: "gelir", ikon: "fa-chart-line" },
+            { id: 2, baslik: "Sunucu Altyapı", tarih: "05 Haz 14:30", tutar: -45000.00, tip: "gider", ikon: "fa-server" },
+            { id: 3, baslik: "Sistem Geliri", tarih: "01 Haz 00:00", tutar: 500000.00, tip: "gelir", ikon: "fa-wallet" }
+        ];
+
+        const adminUserObj = {
+            id: 1,
+            username: 'admin',
+            password: '123456',
+            email: 'admin@zolhinbank.com',
+            phone: '0555 111 22 33',
+            iban: 'TR44 0001 0009 9999 8888 7777 01',
+            bakiye: VARSAYILAN_BAKİYE,
+            borc: VARSAYILAN_BORC,
+            usdBalance: 0.00,
+            eurBalance: 0.00,
+            goldBalance: 0.00,
+            islemler: VARSAYILAN_İŞLEMLER,
+            role: 'Admin'
+        };
+
+        let tumKullanicilar = JSON.parse(localStorage.getItem('tumKullanicilar'));
+        if (!tumKullanicilar || tumKullanicilar.length === 0) {
+            tumKullanicilar = [adminUserObj];
+            localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
+        }
+
+        let aktifKullaniciAdi = localStorage.getItem('aktifKullaniciAdi') || null;
+        let c = tumKullanicilar.find(u => u.username === aktifKullaniciAdi) || adminUserObj;
+
+        let currentRates = { USD: 32.45, EUR: 35.12, GOLD: 2450.00 };
+
+
+        // --- 2. TEMA YÖNETİMİ ---
+        function dynamicThemeApply(theme) {
+            if (theme === 'light') {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+                document.body.classList.remove('dark');
+                document.body.classList.add('light');
+            } else {
+                document.documentElement.classList.remove('light');
+                document.documentElement.classList.add('dark');
+                document.body.classList.remove('light');
+                document.body.classList.add('dark');
+            }
+            localStorage.setItem('theme', theme);
+        }
+
+        document.getElementById('themeToggleLogin').addEventListener('click', () => {
+            let current = document.body.classList.contains('dark') ? 'light' : 'dark';
+            dynamicThemeApply(current);
+        });
+        document.getElementById('themeToggleDash').addEventListener('click', () => {
+            let current = document.body.classList.contains('dark') ? 'light' : 'dark';
+            dynamicThemeApply(current);
+        });
+
+        dynamicThemeApply(localStorage.getItem('theme') || 'dark');
+
+
+        // --- 3. KULLANICI VERİLERİNİ GLOBAL SENKRONİZE ETME VE VERİTABANINA YAZMA ---
+        function globalVerileriKaydet() {
+            const idx = tumKullanicilar.findIndex(u => u.username === c.username);
+            if (idx !== -1) {
+                tumKullanicilar[idx] = c;
+            }
+            localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
+        }
+
+
+        // --- 4. FORMAT VE UI GÜNCELLEME ---
+        function paraFormatla(deger) {
+            return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(deger) + " ₺";
+        }
+
+        function panelArayuzunuGuncelle() {
+            document.getElementById('bakiyeDisplay').innerText = paraFormatla(c.bakiye);
+            document.getElementById('debtDisplay').innerText = paraFormatla(c.borc);
+            
+            document.getElementById('topUsernameDisplay').innerText = c.username;
+            document.getElementById('panelUserDisplay').innerText = c.username.charAt(0).toUpperCase() + c.username.slice(1) + " Kullanıcı";
+            document.getElementById('panelRoleDisplay').innerText = c.role || 'Müşteri';
+            
+            document.getElementById('displayUserId').innerText = c.id;
+            document.getElementById('displayUsername').innerText = c.username;
+            document.getElementById('displayIban').innerText = c.iban;
+            document.getElementById('displayEmail').innerText = c.email;
+            document.getElementById('displayPhone').innerText = c.phone;
+
+            document.getElementById('usdBalanceDisplay').innerText = c.usdBalance.toFixed(2) + " $";
+            document.getElementById('eurBalanceDisplay').innerText = c.eurBalance.toFixed(2) + " €";
+            document.getElementById('goldBalanceDisplay').innerText = c.goldBalance.toFixed(2) + " gr";
+
+            // [ROL KONTROLÜ] Admin hariç hızlı para yükleme alanını tamamen gizle
+            const depositContainer = document.getElementById('quickDepositContainer');
+            if (c.role === 'Admin') {
+                depositContainer.classList.remove('hidden');
+            } else {
+                depositContainer.classList.add('hidden');
+            }
+
+            const listEl = document.getElementById('transactionsList');
+            listEl.innerHTML = '';
+
+            c.islemler.forEach(islem => {
+                const isPositive = islem.tutar > 0;
+                const renkClass = isPositive ? "text-emerald-400" : "text-rose-500";
+                const bgIconClass = isPositive ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400";
+                const isaret = isPositive ? "+" : "";
+
+                const itemHTML = `
+                    <div class="flex justify-between items-center bg-input-custom p-3 rounded-lg border border-gray-800/30">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg ${bgIconClass} flex items-center justify-center text-sm">
+                                <i class="fa-solid ${islem.ikon}"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-semibold text-custom-white">${islem.baslik}</h5>
+                                <span class="text-[10px] text-gray-500">${islem.tarih}</span>
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold ${renkClass}">${isaret}${paraFormatla(islem.tutar)}</span>
+                    </div>
+                `;
+                listEl.innerHTML += itemHTML;
+            });
+        }
+
+        function anlikTarihUret() {
+            const aylar = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+            const d = new Date();
+            return `${String(d.getDate()).padStart(2, '0')} ${aylar[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+
+
+        // --- 5. GİRİŞ, KAYIT VE GEÇİŞ KONTROLLERİ ---
+        const authScreen = document.getElementById('authScreen');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const dashboardPanel = document.getElementById('dashboardPanel');
+        const loginError = document.getElementById('loginError');
+        const regError = document.getElementById('regError');
+        const authSubtitle = document.getElementById('authSubtitle');
+
+        document.getElementById('toRegisterBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            authSubtitle.innerText = "Yeni bir hesap oluşturun";
+            loginError.classList.add('hidden');
+        });
+
+        document.getElementById('toLoginBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            authSubtitle.innerText = "Hesabınıza giriş yapın";
+            regError.classList.add('hidden');
+        });
+
+        document.getElementById('togglePasswordVisibility').addEventListener('click', function() {
+            const passInput = document.getElementById('loginPassword');
+            const eyeIcon = document.getElementById('eyeIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        });
+
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const user = document.getElementById('loginUsername').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+
+            const bulunanKullanici = tumKullanicilar.find(u => u.username === user && u.password === pass);
+
+            if (bulunanKullanici) {
+                loginError.classList.add('hidden');
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('aktifKullaniciAdi', user);
+                c = bulunanKullanici; 
+                oturumAc();
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        registerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+
+            const varMi = tumKullanicilar.some(u => u.username.toLowerCase() === username.toLowerCase());
+            if (varMi) {
+                regError.classList.remove('hidden');
+                return;
+            }
+            regError.classList.add('hidden');
+
+            const yeniId = tumKullanicilar.length + 1;
+            const rastgeleIban = "TR" + Math.floor(10 + Math.random() * 90) + " 0001 0009 " + Math.floor(1000 + Math.random() * 9000) + " " + Math.floor(1000 + Math.random() * 9000) + " " + Math.floor(1000 + Math.random() * 9000) + " " + Math.floor(10 + Math.random() * 90);
+
+            const yeniKullanici = {
+                id: yeniId,
+                username: username,
+                password: password,
+                email: email,
+                phone: phone,
+                iban: rastgeleIban,
+                bakiye: 10000.00, 
+                borc: 0.00,
+                usdBalance: 0.00,
+                eurBalance: 0.00,
+                goldBalance: 0.00,
+                islemler: [
+                    { id: Date.now(), baslik: "Hesap Açılış Hediyesi", tarih: anlikTarihUret(), tutar: 10000.00, tip: "gelir", ikon: "fa-gift" }
+                ],
+                role: 'Müşteri' // Kayıt olanlar otomatik müşteri rolü alır
+            };
+
+            tumKullanicilar.push(yeniKullanici);
+            localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
+
+            alert('Hesabın başarıyla oluşturuldu kanka! Giriş yapabilirsin.');
+            registerForm.reset();
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            authSubtitle.innerText = "Hesabınıza giriş yapın";
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('aktifKullaniciAdi');
+            oturumKapat();
+        });
+
+        function oturumAc() {
+            authScreen.style.display = 'none';
+            dashboardPanel.style.display = 'block';
+            panelArayuzunuGuncelle();
+        }
+
+        function oturumKapat() {
+            dashboardPanel.style.display = 'none';
+            authScreen.style.display = 'flex';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        if (localStorage.getItem('isLoggedIn') === 'true' && aktifKullaniciAdi) {
+            oturumAc();
+        } else {
+            oturumKapat();
+        }
+
+
+        // --- 6. PARA TRANSFER SİSTEMİ ---
+        document.getElementById('transferForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const girilenIban = document.getElementById('txIban').value.trim().replace(/\s+/g, '');
+            const miktar = parseFloat(document.getElementById('txAmount').value);
+            const aciklama = document.getElementById('txDesc').value.trim();
+
+            if (isNaN(miktar) || miktar <= 0) {
+                alert('Lütfen geçerli bir tutar gir kanka!');
+                return;
+            }
+
+            if (miktar > c.bakiye) {
+                alert('Hesabında bu kadar bakiye yok kanka!');
+                return;
+            }
+
+            const temizKendiIban = c.iban.replace(/\s+/g, '');
+            if (girilenIban === temizKendiIban) {
+                alert('Kanka kendi kendine para transferi yapamazsın!');
+                return;
+            }
+
+            c.bakiye -= miktar;
+            c.islemler.unshift({
+                id: Date.now(),
+                baslik: `Giden Transfer: ${aciklama}`,
+                tarih: anlikTarihUret(),
+                tutar: -miktar,
+                tip: "gider",
+                ikon: "fa-paper-plane"
+            });
+
+            const aliciKullanici = tumKullanicilar.find(u => u.iban.replace(/\s+/g, '') === girilenIban);
+
+            if (aliciKullanici) {
+                aliciKullanici.bakiye += miktar;
+                aliciKullanici.islemler.unshift({
+                    id: Date.now() + 1,
+                    baslik: `Gelen Transfer (${c.username}): ${aciklama}`,
+                    tarih: anlikTarihUret(),
+                    tutar: miktar,
+                    tip: "gelir",
+                    ikon: "fa-wallet"
+                });
+                alert(`Transfer başarıyla gerçekleştirildi! Tutar @${aliciKullanici.username} hesabına aktarıldı.`);
+            } else {
+                alert('Dış Banka IBAN Transferi Başarıyla Gerçekleştirildi!');
+            }
+
+            globalVerileriKaydet();
+            document.getElementById('transferForm').reset();
+            panelArayuzunuGuncelle();
+        });
+
+
+        // --- 7. BORÇ ÖDEME & PARA YÜKLEME & KREDİ ÇEKME ---
+        document.getElementById('depositBtn').addEventListener('click', () => {
+            const amountInput = document.getElementById('depositAmount');
+            const miktar = parseFloat(amountInput.value);
+
+            if (isNaN(miktar) || miktar <= 0) {
+                alert('Geçerli bir yükleme tutarı gir kanka!');
+                return;
+            }
+
+            c.bakiye += miktar;
+            c.islemler.unshift({
+                id: Date.now(),
+                baslik: "Hesaba Para Yükleme",
+                tarih: anlikTarihUret(),
+                tutar: miktar,
+                tip: "gelir",
+                ikon: "fa-wallet"
+            });
+            globalVerileriKaydet();
+
+            amountInput.value = '';
+            panelArayuzunuGuncelle();
+            alert('Para başarıyla hesabına yüklendi!');
+        });
+
+        document.getElementById('payDebtBtn').addEventListener('click', () => {
+            const debtInput = document.getElementById('payDebtAmount');
+            const miktar = parseFloat(debtInput.value);
+
+            if (isNaN(miktar) || miktar <= 0) {
+                alert('Geçerli bir borç ödeme tutarı gir kanka!');
+                return;
+            }
+            if (miktar > c.bakiye) {
+                alert('Bakiyeniz bu ödemeyi yapmak için yetersiz!');
+                return;
+            }
+            if (miktar > c.borc) {
+                alert('Mevcut borcunuzdan daha fazla ödeme yapamazsınız!');
+                return;
+            }
+
+            c.bakiye -= miktar;
+            c.borc -= miktar;
+
+            c.islemler.unshift({
+                id: Date.now(),
+                baslik: "Kredi Borcu Ödemesi",
+                tarih: anlikTarihUret(),
+                tutar: -miktar,
+                tip: "gider",
+                ikon: "fa-credit-card"
+            });
+            globalVerileriKaydet();
+
+            debtInput.value = '';
+            panelArayuzunuGuncelle();
+            alert('Kredi borç ödemesi başarıyla gerçekleştirildi!');
+        });
+
+        document.getElementById('takeLoanBtn').addEventListener('click', () => {
+            const loanInput = document.getElementById('takeLoanAmount');
+            const miktar = parseFloat(loanInput.value);
+
+            if (isNaN(miktar) || miktar <= 0) {
+                alert('Lütfen geçerli bir kredi tutarı yaz kanka!');
+                return;
+            }
+
+            c.bakiye += miktar;
+            c.borc += miktar;
+
+            c.islemler.unshift({
+                id: Date.now(),
+                baslik: "Zolhin Anlık Nakit Kredi",
+                tarih: anlikTarihUret(),
+                tutar: miktar,
+                tip: "gelir",
+                ikon: "fa-hand-holding-dollar"
+            });
+            globalVerileriKaydet();
+
+            loanInput.value = '';
+            panelArayuzunuGuncelle();
+            alert('Krediniz anında onaylandı! Para bakiyenize aktarıldı ve borcunuza eklendi.');
+        });
+
+
+        // --- 8. FAİZ SİMÜLASYONU ---
+        setInterval(() => {
+            if (localStorage.getItem('isLoggedIn') === 'true' && c.borc > 0) {
+                const faizMiktari = c.borc * 0.005; 
+                c.borc += faizMiktari;
+                globalVerileriKaydet();
+                
+                document.getElementById('debtDisplay').innerText = paraFormatla(c.borc);
+
+                const toast = document.getElementById('faizToast');
+                toast.style.opacity = '1';
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                }, 3000);
+            }
+        }, 30000);
+
+
+        // --- 9. CANLI BORSA SİMÜLATÖRÜ (10s) ---
+        setInterval(() => {
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                ['USD', 'EUR', 'GOLD'].forEach(asset => {
+                    const degisimYuzu = (Math.random() * 0.4) - 0.2; 
+                    currentRates[asset] += currentRates[asset] * (degisimYuzu / 100);
+                    
+                    const elRate = document.getElementById(asset.toLowerCase() + 'Rate');
+                    const elTrend = document.getElementById(asset.toLowerCase() + 'Trend');
+                    
+                    elRate.innerText = asset === 'GOLD' ? Math.round(currentRates[asset]) + " ₺" : currentRates[asset].toFixed(2) + " ₺";
+                    
+                    if (degisimYuzu >= 0) {
+                        elTrend.className = "text-[10px] text-emerald-400 font-medium";
+                        elTrend.innerHTML = `<i class="fa-solid fa-caret-up"></i> %${degisimYuzu.toFixed(2)}`;
+                    } else {
+                        elTrend.className = "text-[10px] text-rose-400 font-medium";
+                        elTrend.innerHTML = `<i class="fa-solid fa-caret-down"></i> %${Math.abs(degisimYuzu).toFixed(2)}`;
+                    }
+                });
+            }
+        }, 10000);
+
+
+        // --- 10. DÖVİZ EMİRLERİ ---
+        document.getElementById('fxActionBtn').addEventListener('click', () => {
+            const asset = document.getElementById('fxAsset').value;
+            const type = document.getElementById('fxType').value;
+            const miktar = parseFloat(document.getElementById('fxAmount').value);
+            const anlikKur = currentRates[asset];
+
+            if (isNaN(miktar) || miktar <= 0) {
+                alert('Lütfen geçerli bir miktar gir kanka!');
+                return;
+            }
+
+            const toplamMaliyetTL = miktar * anlikKur;
+
+            if (type === 'AL') {
+                if (toplamMaliyetTL > c.bakiye) {
+                    alert('Bu alım için yeterli TL bakiyeniz yok kanka!');
+                    return;
+                }
+                c.bakiye -= toplamMaliyetTL;
+                if (asset === 'USD') c.usdBalance += miktar;
+                if (asset === 'EUR') c.eurBalance += miktar;
+                if (asset === 'GOLD') c.goldBalance += miktar;
+
+                c.islemler.unshift({
+                    id: Date.now(),
+                    baslik: `${miktar} ${asset} Alımı (@${asset === 'GOLD' ? Math.round(anlikKur) : anlikKur.toFixed(2)})`,
+                    tarih: anlikTarihUret(),
+                    tutar: -toplamMaliyetTL,
+                    tip: "gider",
+                    ikon: "fa-arrow-trend-up"
+                });
+            } else { 
+                if (asset === 'USD' && miktar > c.usdBalance) { alert('Yetersiz Dolar bakiyesi!'); return; }
+                if (asset === 'EUR' && miktar > c.eurBalance) { alert('Yetersiz Euro bakiyesi!'); return; }
+                if (asset === 'GOLD' && miktar > c.goldBalance) { alert('Yetersiz Altın bakiyesi!'); return; }
+
+                c.bakiye += toplamMaliyetTL;
+                if (asset === 'USD') c.usdBalance -= miktar;
+                if (asset === 'EUR') c.eurBalance -= miktar;
+                if (asset === 'GOLD') c.goldBalance -= miktar;
+
+                c.islemler.unshift({
+                    id: Date.now(),
+                    baslik: `${miktar} ${asset} Satışı (@${asset === 'GOLD' ? Math.round(anlikKur) : anlikKur.toFixed(2)})`,
+                    tarih: anlikTarihUret(),
+                    tutar: toplamMaliyetTL,
+                    tip: "gelir",
+                    ikon: "fa-arrow-trend-down"
+                });
+            }
+
+            globalVerileriKaydet();
+            document.getElementById('fxAmount').value = '';
+            panelArayuzunuGuncelle();
+            alert('Yatırım emri başarıyla işlendi kanka!');
+        });
+
+
+        // --- 11. AYARLAR MODAL YÖNETİMİ ---
+        const modal = document.getElementById('settingsModal');
+        
+        document.getElementById('openSettingsBtn').addEventListener('click', () => {
+            document.getElementById('settingsEmail').value = c.email;
+            document.getElementById('settingsPhone').value = c.phone;
+            document.getElementById('settingsPassword').value = '';
+            modal.style.display = 'flex';
+        });
+
+        document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            c.email = document.getElementById('settingsEmail').value.trim();
+            c.phone = document.getElementById('settingsPhone').value.trim();
+            
+            const newPass = document.getElementById('settingsPassword').value.trim();
+            if (newPass !== '') {
+                c.password = newPass;
+            }
+
+            globalVerileriKaydet();
+            modal.style.display = 'none';
+            panelArayuzunuGuncelle();
+            alert('Ayarlar başarıyla güncellendi kanka!');
+        });
+    </script>
+</body>
+</html>
