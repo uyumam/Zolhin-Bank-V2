@@ -7,7 +7,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts (Inter) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Iconları -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -227,7 +227,7 @@
                 </div>
             </div>
 
-            <!-- ORTA SÜTUN: Bakiye, Para Transferi & Kredi Sistemi -->
+            <!-- ORTA SÜTUN: Bakiye, Para Transferi, Kredi Sistemi & Admin Panelleri -->
             <div class="lg:col-span-5 flex flex-col gap-6">
                 <!-- Hesap Bakiyesi -->
                 <div class="bg-card-custom p-6 rounded-xl border border-gray-700/10 flex justify-between items-center">
@@ -266,7 +266,7 @@
                 </div>
 
                 <!-- Para Transferi Formu -->
-                <div class="bg-card-custom p-6 rounded-xl flex-1 border border-gray-700/10">
+                <div class="bg-card-custom p-6 rounded-xl border border-gray-700/10">
                     <h4 class="text-sm font-semibold text-gray-300 mb-4">Para Transferi</h4>
                     <form id="transferForm" class="space-y-4">
                         <div>
@@ -285,6 +285,29 @@
                             <i class="fa-solid fa-paper-plane text-xs"></i> Gönder
                         </button>
                     </form>
+                </div>
+
+                <!-- ADMIN KULLANICI YÖNETİM PANELİ -->
+                <div id="adminUserManagementContainer" class="bg-card-custom p-6 rounded-xl border border-gray-700/10 hidden">
+                    <h4 class="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider flex justify-between items-center">
+                        <span><i class="fa-solid fa-users text-amber-500 mr-2"></i> Banka Kullanıcı Listesi</span>
+                        <span id="userCountBadge" class="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">0</span>
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-800 text-gray-500 uppercase font-bold tracking-wider">
+                                    <th class="py-2">Kullanıcı</th>
+                                    <th class="py-2">Bakiye</th>
+                                    <th class="py-2">Borç</th>
+                                    <th class="py-2 text-center">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUserTableBody" class="divide-y divide-gray-800 text-gray-300">
+                                <!-- JS dinamik dolduracak -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- ADMIN GERİ BİLDİRİM LİSTELEME PANELİ -->
@@ -452,7 +475,7 @@
 
         let currentRates = { USD: 32.45, EUR: 35.12, GOLD: 2450.00 };
 
-        // Geri Bildirim Başlangıç Verisi Hafızası
+        // Geri Bildirim Hafızası
         let tumFeedbackler = JSON.parse(localStorage.getItem('tumFeedbackler')) || [];
 
 
@@ -517,16 +540,21 @@
             document.getElementById('eurBalanceDisplay').innerText = c.eurBalance.toFixed(2) + " €";
             document.getElementById('goldBalanceDisplay').innerText = c.goldBalance.toFixed(2) + " gr";
 
-            // [ROL KONTROLÜ] Admin hariç hızlı para yükleme alanını tamamen gizle
+            // [ROL KONTROLÜ] Admin hariç hızlı para yükleme, kullanıcı listesi ve feedback alanlarını gizle
             const depositContainer = document.getElementById('quickDepositContainer');
             const feedbackContainer = document.getElementById('adminFeedbackContainer');
+            const userManagementContainer = document.getElementById('adminUserManagementContainer');
+
             if (c.role === 'Admin') {
                 depositContainer.classList.remove('hidden');
                 feedbackContainer.classList.remove('hidden');
+                userManagementContainer.classList.remove('hidden');
                 adminFeedbackListesiniGuncelle();
+                adminKullaniciListesiniGuncelle();
             } else {
                 depositContainer.classList.add('hidden');
                 feedbackContainer.classList.add('hidden');
+                userManagementContainer.classList.add('hidden');
             }
 
             const listEl = document.getElementById('transactionsList');
@@ -596,6 +624,73 @@
                 listEl.innerHTML += fbHTML;
             });
         }
+
+        // Admin Paneli İçin Kullanıcı Listesini Güncelleme Fonksiyonu
+        function adminKullaniciListesiniGuncelle() {
+            const tableBody = document.getElementById('adminUserTableBody');
+            document.getElementById('userCountBadge').innerText = tumKullanicilar.length;
+            tableBody.innerHTML = '';
+
+            tumKullanicilar.forEach((user, index) => {
+                const rolRozet = user.role === 'Admin' ? 'text-amber-400 font-bold' : 'text-blue-400';
+                
+                const trHTML = `
+                    <tr class="border-b border-gray-800/50 hover:bg-input-custom/40 transition-colors">
+                        <td class="py-2.5">
+                            <span class="font-semibold text-custom-white">@${user.username}</span>
+                            <div class="text-[10px] ${rolRozet}">${user.role || 'Müşteri'}</div>
+                        </td>
+                        <td class="py-2.5 font-mono text-emerald-400 font-medium">${paraFormatla(user.bakiye)}</td>
+                        <td class="py-2.5 font-mono text-rose-400 font-medium">${paraFormatla(user.borc)}</td>
+                        <td class="py-2.5 text-center flex items-center justify-center gap-2">
+                            <button onclick="adminKullaniciDuzenle(${index})" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-[10px] font-medium transition-colors">
+                                Düzenle
+                            </button>
+                            ${user.role !== 'Admin' ? `
+                                <button onclick="adminKullaniciSil(${index})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-[10px] font-medium transition-colors">
+                                    Sil
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += trHTML;
+            });
+        }
+
+        // Admin Kullanıcı Yönetimi Aksiyonları
+        window.adminKullaniciDuzenle = function(index) {
+            const targetUser = tumKullanicilar[index];
+            const yeniBakiyeStr = prompt(`@${targetUser.username} için yeni BASETTLİ TL bakiyesini girin kanka:`, targetUser.bakiye);
+            const yeniBorcStr = prompt(`@${targetUser.username} için yeni KREDİ BORCU tutarını girin kanka:`, targetUser.borc);
+
+            if (yeniBakiyeStr !== null && !isNaN(parseFloat(yeniBakiyeStr))) {
+                targetUser.bakiye = parseFloat(yeniBakiyeStr);
+            }
+            if (yeniBorcStr !== null && !isNaN(parseFloat(yeniBorcStr))) {
+                targetUser.borc = parseFloat(yeniBorcStr);
+            }
+
+            localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
+            
+            // Eğer düzenlenen kişi o sırada aktif olan kişi ise c nesnesini de güncelle
+            if (c.username === targetUser.username) {
+                c = targetUser;
+            }
+
+            panelArayuzunuGuncelle();
+            alert(`@${targetUser.username} bilgileri başarıyla güncellendi kanka!`);
+        };
+
+        window.adminKullaniciSil = function(index) {
+            const targetUser = tumKullanicilar[index];
+            if (confirm(`@${targetUser.username} adlı kullanıcının hesabını tamamen silmek istediğine emin misin kanka? Geri dönüşü yoktur.`)) {
+                tumKullanicilar.splice(index, 1);
+                localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
+                panelArayuzunuGuncelle();
+                alert('Kullanıcı sistemden tamamen silindi!');
+            }
+        };
 
         // Admin Feedback İşlemleri
         window.feedbackDurumDegistir = function(index) {
@@ -702,7 +797,7 @@
                 islemler: [
                     { id: Date.now(), baslik: "Hesap Açılış Hediyesi", tarih: anlikTarihUret(), tutar: 10000.00, tip: "gelir", ikon: "fa-gift" }
                 ],
-                role: 'Müşteri' // Kayıt olanlar otomatik müşteri rolü alır
+                role: 'Müşteri'
             };
 
             tumKullanicilar.push(yeniKullanici);
@@ -713,6 +808,10 @@
             registerForm.classList.add('hidden');
             loginForm.classList.remove('hidden');
             authSubtitle.innerText = "Hesabınıza giriş yapın";
+            
+            if(c.role === 'Admin') {
+                adminKullaniciListesiniGuncelle();
+            }
         });
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
