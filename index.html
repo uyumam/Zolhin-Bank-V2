@@ -131,6 +131,11 @@
                 <span class="hover:text-custom-white cursor-pointer"><i class="fa-solid fa-user mr-1"></i> <span id="topUsernameDisplay">admin</span></span>
                 <button id="logoutBtn" class="hover:text-red-400 text-gray-500 transition-colors"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Çıkış</button>
                 
+                <!-- Geri Bildirim Butonu -->
+                <button id="openFeedbackBtn" class="bg-card-custom p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20" title="Geri Bildirim Gönder">
+                    <i class="fa-solid fa-comment-dots"></i>
+                </button>
+
                 <!-- Ayarlar Butonu -->
                 <button id="openSettingsBtn" class="bg-card-custom p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20">
                     <i class="fa-solid fa-gear"></i>
@@ -281,6 +286,17 @@
                         </button>
                     </form>
                 </div>
+
+                <!-- ADMIN GERİ BİLDİRİM LİSTELEME PANELİ -->
+                <div id="adminFeedbackContainer" class="bg-card-custom p-6 rounded-xl border border-gray-700/10 hidden">
+                    <h4 class="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider flex justify-between items-center">
+                        <span><i class="fa-solid fa-comments mr-2 text-blue-500"></i> Gelen Geri Bildirimler</span>
+                        <span id="feedbackCountBadge" class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">0</span>
+                    </h4>
+                    <div id="adminFeedbackList" class="space-y-3 overflow-y-auto max-h-[300px] pr-1">
+                        <!-- JS dinamik dolduracak -->
+                    </div>
+                </div>
             </div>
 
             <!-- SAĞ SÜTUN: Canlı Döviz Piyasası & Son İşlemler -->
@@ -337,6 +353,34 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- GERİ BİLDİRİM / FEEDBACK MODAL -->
+    <div id="feedbackModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50 transition-all">
+        <div class="w-full max-w-md bg-login-card p-6 rounded-2xl border border-gray-700 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                <h3 class="text-md font-bold text-custom-white"><i class="fa-solid fa-comment-dots mr-2 text-emerald-500"></i>Geri Bildirim Gönder</h3>
+                <button id="closeFeedbackBtn" class="text-gray-400 hover:text-white text-lg">&times;</button>
+            </div>
+            <form id="feedbackForm" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Bildirim Türü</label>
+                    <select id="feedbackType" class="w-full bg-input-custom border border-gray-800 rounded-lg px-3 py-2 text-custom-white focus:outline-none">
+                        <option value="Hata Bildirimi">🐛 Hata Bildirimi (Bug)</option>
+                        <option value="Öneri">💡 Öneri / Yeni Özellik</option>
+                        <option value="Teşekkür">❤️ Teşekkür / Övgü</option>
+                        <option value="Diğer">📝 Diğer</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Mesajınız</label>
+                    <textarea id="feedbackMessage" rows="4" required placeholder="Sitede bulduğunuz eksikliği veya hatayı detaylıca yazın kanka..." class="w-full bg-input-custom border border-gray-800 rounded-lg px-3 py-2 text-custom-white focus:outline-none resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded-lg text-xs transition-colors mt-2">
+                    Geri Bildirimi İlet
+                </button>
+            </form>
         </div>
     </div>
 
@@ -408,6 +452,9 @@
 
         let currentRates = { USD: 32.45, EUR: 35.12, GOLD: 2450.00 };
 
+        // Geri Bildirim Başlangıç Verisi Hafızası
+        let tumFeedbackler = JSON.parse(localStorage.getItem('tumFeedbackler')) || [];
+
 
         // --- 2. TEMA YÖNETİMİ ---
         function dynamicThemeApply(theme) {
@@ -472,10 +519,14 @@
 
             // [ROL KONTROLÜ] Admin hariç hızlı para yükleme alanını tamamen gizle
             const depositContainer = document.getElementById('quickDepositContainer');
+            const feedbackContainer = document.getElementById('adminFeedbackContainer');
             if (c.role === 'Admin') {
                 depositContainer.classList.remove('hidden');
+                feedbackContainer.classList.remove('hidden');
+                adminFeedbackListesiniGuncelle();
             } else {
                 depositContainer.classList.add('hidden');
+                feedbackContainer.classList.add('hidden');
             }
 
             const listEl = document.getElementById('transactionsList');
@@ -510,6 +561,56 @@
             const d = new Date();
             return `${String(d.getDate()).padStart(2, '0')} ${aylar[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         }
+
+        // Admin Paneli İçin Geri Bildirimleri Listeleme Fonksiyonu
+        function adminFeedbackListesiniGuncelle() {
+            const listEl = document.getElementById('adminFeedbackList');
+            document.getElementById('feedbackCountBadge').innerText = tumFeedbackler.length;
+            listEl.innerHTML = '';
+
+            if (tumFeedbackler.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Henüz bir geri bildirim gönderilmemiş kanka.</p>`;
+                return;
+            }
+
+            tumFeedbackler.forEach((fb, index) => {
+                const durumRenk = fb.durum === 'Çözüldü' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400';
+                
+                const fbHTML = `
+                    <div class="bg-input-custom p-3 rounded-lg border border-gray-800/40 text-xs flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-[#b89742]">@${fb.gonderen} <span class="text-gray-500 font-normal">(${fb.tip})</span></span>
+                            <span class="text-[10px] text-gray-500 font-mono">${fb.tarih}</span>
+                        </div>
+                        <p class="text-gray-300 break-words">${fb.mesaj}</p>
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-800/40">
+                            <button onclick="feedbackDurumDegistir(${index})" class="px-2 py-0.5 rounded text-[10px] font-semibold ${durumRenk}">
+                                ${fb.durum} (Değiştir)
+                            </button>
+                            <button onclick="feedbackSil(${index})" class="text-rose-400 hover:text-rose-500 font-medium text-[11px]">
+                                <i class="fa-solid fa-trash-can mr-1"></i> Sil
+                            </button>
+                        </div>
+                    </div>
+                `;
+                listEl.innerHTML += fbHTML;
+            });
+        }
+
+        // Admin Feedback İşlemleri
+        window.feedbackDurumDegistir = function(index) {
+            tumFeedbackler[index].durum = tumFeedbackler[index].durum === 'Beklemede' ? 'Çözüldü' : 'Beklemede';
+            localStorage.setItem('tumFeedbackler', JSON.stringify(tumFeedbackler));
+            adminFeedbackListesiniGuncelle();
+        };
+
+        window.feedbackSil = function(index) {
+            if(confirm('Bu geri bildirimi silmek istediğine emin misin kanka?')) {
+                tumFeedbackler.splice(index, 1);
+                localStorage.setItem('tumFeedbackler', JSON.stringify(tumFeedbackler));
+                adminFeedbackListesiniGuncelle();
+            }
+        };
 
 
         // --- 5. GİRİŞ, KAYIT VE GEÇİŞ KONTROLLERİ ---
@@ -914,6 +1015,43 @@
             modal.style.display = 'none';
             panelArayuzunuGuncelle();
             alert('Ayarlar başarıyla güncellendi kanka!');
+        });
+
+
+        // --- 12. GERİ BİLDİRİM (FEEDBACK) MODAL YÖNETİMİ ---
+        const fbModal = document.getElementById('feedbackModal');
+
+        document.getElementById('openFeedbackBtn').addEventListener('click', () => {
+            document.getElementById('feedbackMessage').value = '';
+            fbModal.style.display = 'flex';
+        });
+
+        document.getElementById('closeFeedbackBtn').addEventListener('click', () => {
+            fbModal.style.display = 'none';
+        });
+
+        document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fbType = document.getElementById('feedbackType').value;
+            const fbMessage = document.getElementById('feedbackMessage').value.trim();
+
+            const yeniFeedback = {
+                gonderen: c.username,
+                tip: fbType,
+                mesaj: fbMessage,
+                tarih: anlikTarihUret(),
+                durum: 'Beklemede'
+            };
+
+            tumFeedbackler.unshift(yeniFeedback);
+            localStorage.setItem('tumFeedbackler', JSON.stringify(tumFeedbackler));
+
+            fbModal.style.display = 'none';
+            alert('Geri bildirimin başarıyla kaydedildi kanka! Admin paneline iletildi.');
+            
+            if(c.role === 'Admin') {
+                adminFeedbackListesiniGuncelle();
+            }
         });
     </script>
 </body>
