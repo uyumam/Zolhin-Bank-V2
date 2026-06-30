@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zolhin Bank - Güvenli Giriş, Kayıt ve Dashboard</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts (Inter) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome Iconları -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -35,22 +32,20 @@
 </head>
 <body class="dark text-gray-200 min-h-screen p-4 md:p-6 flex flex-col items-center justify-center relative">
 
-    <!-- Faiz Bildirim Kutusu -->
     <div id="faizToast" class="fixed top-4 right-4 bg-amber-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-xl z-50 transition-all opacity-0 pointer-events-none flex items-center gap-2">
-        <i class="fa-solid fa-percent animate-spin"></i> Kredi borcuna simüle edilmiş günlük faiz (%0.5) applied!
+        <i class="fa-solid fa-percent animate-spin"></i> Kredi borcuna simüle edilmiş günlük faiz (%0.5) uygulandı!
     </div>
 
-    <!-- ========================================== -->
-    <!-- 1. GİRİŞ & KAYIT KONTEYNERİ (AUTH SCREEN)  -->
-    <!-- ========================================== -->
+    <div id="faturaToast" class="fixed top-16 right-4 bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-xl z-50 transition-all opacity-0 pointer-events-none flex items-center gap-2">
+        <i class="fa-solid fa-file-invoice-dollar animate-bounce"></i> Adınıza yeni bir ödenmemiş fatura tanımlandı kanka!
+    </div>
+
     <div id="authScreen" class="w-full max-w-md bg-login-card p-8 rounded-2xl shadow-2xl border flex flex-col gap-6 relative transition-all">
-        <!-- Giriş/Kayıt Ekranı Tema Değiştirici -->
         <button id="themeToggleLogin" type="button" class="absolute top-4 right-4 bg-gray-800/40 dark:bg-gray-700/40 p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20">
             <i class="fa-solid fa-moon dark:hidden"></i>
             <i class="fa-solid fa-sun hidden dark:inline"></i>
         </button>
 
-        <!-- Logo ve Başlık -->
         <div class="flex flex-col items-start gap-1">
             <div class="flex items-center gap-2 text-xl font-bold tracking-wider text-[#b89742]">
                 <i class="fa-solid fa-building-columns"></i>
@@ -59,7 +54,6 @@
             <p id="authSubtitle" class="text-sm text-gray-400 dark:text-gray-400 font-medium mt-2">Hesabınıza giriş yapın</p>
         </div>
 
-        <!-- 1A. GİRİŞ FORMU -->
         <form id="loginForm" class="space-y-4">
             <div>
                 <label class="block text-xs font-semibold text-gray-400 mb-1">Kullanıcı Adı</label>
@@ -75,6 +69,7 @@
                 </div>
             </div>
             <div id="loginError" class="text-xs text-red-500 font-medium hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i> Kullanıcı adı veya şifre hatalı!</div>
+            <div id="loginLockError" class="text-xs text-rose-500 font-medium hidden"><i class="fa-solid fa-shield-halved mr-1"></i> Çok fazla hatalı deneme! Bu hesap güvenlik nedeniyle geçici olarak kilitlendi.</div>
             
             <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg text-sm transition-colors mt-4 shadow-lg shadow-emerald-500/20">
                 Giriş Yap
@@ -85,7 +80,6 @@
             </div>
         </form>
 
-        <!-- 1B. KAYIT OLMA FORMU -->
         <form id="registerForm" class="space-y-4 hidden">
             <div>
                 <label class="block text-xs font-semibold text-gray-400 mb-1">Kullanıcı Adı</label>
@@ -116,12 +110,8 @@
     </div>
 
 
-    <!-- ========================================== -->
-    <!-- 2. ANA DASHBOARD PANELİ                    -->
-    <!-- ========================================== -->
     <div id="dashboardPanel" class="w-full max-w-7xl bg-main-container p-6 rounded-2xl shadow-2xl border border-gray-800/40 hidden transition-all">
         
-        <!-- ÜST BAR (Header) -->
         <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-800/40">
             <div class="text-xl font-bold tracking-wider">
                 <span class="text-green-500">ZOLHİN</span> <span class="text-amber-400">BANK</span>
@@ -131,17 +121,14 @@
                 <span class="hover:text-custom-white cursor-pointer"><i class="fa-solid fa-user mr-1"></i> <span id="topUsernameDisplay">admin</span></span>
                 <button id="logoutBtn" class="hover:text-red-400 text-gray-500 transition-colors"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Çıkış</button>
                 
-                <!-- Geri Bildirim Butonu -->
                 <button id="openFeedbackBtn" class="bg-card-custom p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20" title="Geri Bildirim Gönder">
                     <i class="fa-solid fa-comment-dots"></i>
                 </button>
 
-                <!-- Ayarlar Butonu -->
                 <button id="openSettingsBtn" class="bg-card-custom p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20">
                     <i class="fa-solid fa-gear"></i>
                 </button>
 
-                <!-- Dashboard Tema Değiştirici -->
                 <button id="themeToggleDash" class="bg-card-custom p-2 rounded-lg text-gray-400 hover:text-custom-white border border-gray-700/20">
                     <i class="fa-solid fa-moon dark:hidden"></i>
                     <i class="fa-solid fa-sun hidden dark:inline"></i>
@@ -149,10 +136,8 @@
             </div>
         </div>
 
-        <!-- 3 SÜTUNLU ANA İÇERİK -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <!-- SOL SÜTUN: Kullanıcı & Hesap Bilgileri -->
             <div class="lg:col-span-3 bg-card-custom p-5 rounded-xl flex flex-col gap-4 border border-gray-700/10">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full bg-amber-500 flex items-center justify-center text-xl text-white font-bold">
@@ -198,7 +183,6 @@
                     </div>
                 </div>
 
-                <!-- DÖVİZ & ALTIN YATIRIM HESAP BAKİYELERİ -->
                 <div class="pt-2 border-t border-gray-800/40">
                     <h4 class="text-xs font-semibold uppercase tracking-wider text-[#b89742] mb-2"><i class="fa-solid fa-vault mr-1"></i> Yatırım Hesaplarım</h4>
                     <div class="space-y-2 text-xs">
@@ -217,7 +201,6 @@
                     </div>
                 </div>
 
-                <!-- Hızlı Bakiye Yükleme Paneli (Admin Kontrollü) -->
                 <div id="quickDepositContainer" class="mt-auto pt-4 border-t border-gray-800/40">
                     <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Hızlı Para Yükle</h4>
                     <div class="flex gap-2">
@@ -227,9 +210,7 @@
                 </div>
             </div>
 
-            <!-- ORTA SÜTUN: Bakiye, Para Transferi, Kredi Sistemi & Admin Panelleri -->
             <div class="lg:col-span-5 flex flex-col gap-6">
-                <!-- Hesap Bakiyesi -->
                 <div class="bg-card-custom p-6 rounded-xl border border-gray-700/10 flex justify-between items-center">
                     <div>
                         <h4 class="text-sm font-medium text-gray-400 mb-2">Hesap Bakiyesi</h4>
@@ -244,9 +225,7 @@
                     </div>
                 </div>
 
-                <!-- KREDİ OPERASYONLARI ALANI -->
                 <div class="bg-card-custom p-4 rounded-xl border border-gray-700/10 space-y-4">
-                    <!-- Borç Ödeme -->
                     <div>
                         <h4 class="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Kredi Borcu Ödeme</h4>
                         <div class="flex gap-2">
@@ -255,7 +234,6 @@
                         </div>
                     </div>
 
-                    <!-- Yeni Kredi Çekme -->
                     <div class="pt-2 border-t border-gray-800/40">
                         <h4 class="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Yeni Kredi Çek</h4>
                         <div class="flex gap-2">
@@ -265,7 +243,6 @@
                     </div>
                 </div>
 
-                <!-- Para Transferi Formu -->
                 <div class="bg-card-custom p-6 rounded-xl border border-gray-700/10">
                     <h4 class="text-sm font-semibold text-gray-300 mb-4">Para Transferi</h4>
                     <form id="transferForm" class="space-y-4">
@@ -287,7 +264,24 @@
                     </form>
                 </div>
 
-                <!-- ADMIN KULLANICI YÖNETİM PANELİ -->
+                <div class="bg-card-custom p-6 rounded-xl border border-gray-700/10">
+                    <h4 class="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider flex justify-between items-center">
+                        <span><i class="fa-solid fa-file-invoice-dollar text-blue-400 mr-2"></i> Güncel Fatura Borçlarım</span>
+                        <span id="invoiceCountBadge" class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">0</span>
+                    </h4>
+                    <div id="userInvoiceList" class="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                        </div>
+                </div>
+
+                <div id="adminCyberSecurityContainer" class="bg-card-custom p-6 rounded-xl border border-rose-500/20 shadow-lg shadow-rose-500/5 hidden">
+                    <h4 class="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider flex justify-between items-center">
+                        <span class="text-rose-400"><i class="fa-solid fa-shield-halved mr-2"></i> Siber Güvenlik Duvarı &amp; Logları</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    </h4>
+                    <div id="adminCyberLogsList" class="space-y-2 font-mono text-[11px] overflow-y-auto max-h-[200px] pr-1 bg-black/30 p-3 rounded-lg border border-gray-800">
+                        </div>
+                </div>
+
                 <div id="adminUserManagementContainer" class="bg-card-custom p-6 rounded-xl border border-gray-700/10 hidden">
                     <h4 class="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider flex justify-between items-center">
                         <span><i class="fa-solid fa-users text-amber-500 mr-2"></i> Banka Kullanıcı Listesi</span>
@@ -304,27 +298,22 @@
                                 </tr>
                             </thead>
                             <tbody id="adminUserTableBody" class="divide-y divide-gray-800 text-gray-300">
-                                <!-- JS dinamik dolduracak -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- ADMIN GERİ BİLDİRİM LİSTELEME PANELİ -->
                 <div id="adminFeedbackContainer" class="bg-card-custom p-6 rounded-xl border border-gray-700/10 hidden">
                     <h4 class="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider flex justify-between items-center">
                         <span><i class="fa-solid fa-comments mr-2 text-blue-500"></i> Gelen Geri Bildirimler</span>
                         <span id="feedbackCountBadge" class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">0</span>
                     </h4>
                     <div id="adminFeedbackList" class="space-y-3 overflow-y-auto max-h-[300px] pr-1">
-                        <!-- JS dinamik dolduracak -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
-            <!-- SAĞ SÜTUN: Canlı Döviz Piyasası & Son İşlemler -->
             <div class="lg:col-span-4 flex flex-col gap-6">
-                <!-- Canlı Borsa -->
                 <div class="bg-card-custom p-4 rounded-xl border border-gray-700/10 flex flex-col gap-3">
                     <h4 class="text-xs font-semibold text-gray-300 uppercase tracking-wider flex justify-between items-center">
                         <span><i class="fa-solid fa-chart-line mr-1 text-emerald-500"></i> Canlı Döviz & Altın Piyasası</span>
@@ -347,7 +336,6 @@
                             <div id="goldTrend" class="text-[10px] text-rose-400 font-medium"><i class="fa-solid fa-caret-down"></i> %0.05</div>
                         </div>
                     </div>
-                    <!-- Döviz Emir Kutusu -->
                     <div class="bg-input-custom p-3 rounded-lg border border-gray-800/50 space-y-2 text-xs">
                         <div class="flex gap-2">
                             <select id="fxAsset" class="bg-main-container text-custom-white border border-gray-800 rounded-md px-2 py-1 flex-1 outline-none">
@@ -367,19 +355,16 @@
                     </div>
                 </div>
 
-                <!-- Son İşlemler Listesi -->
                 <div class="bg-card-custom p-5 rounded-xl flex flex-col flex-1 border border-gray-700/10">
                     <h4 class="text-sm font-semibold text-gray-300 mb-4">Son İşlemler</h4>
                     <div id="transactionsList" class="space-y-4 overflow-y-auto max-h-[380px] pr-1">
-                        <!-- JS dinamik dolduracak -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
         </div>
     </div>
 
-    <!-- GERİ BİLDİRİM / FEEDBACK MODAL -->
     <div id="feedbackModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50 transition-all">
         <div class="w-full max-w-md bg-login-card p-6 rounded-2xl border border-gray-700 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-gray-800 pb-2">
@@ -407,7 +392,6 @@
         </div>
     </div>
 
-    <!-- AYARLAR / PROFİL MODAL -->
     <div id="settingsModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50 transition-all">
         <div class="w-full max-w-md bg-login-card p-6 rounded-2xl border border-gray-700 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-gray-800 pb-2">
@@ -435,9 +419,6 @@
     </div>
 
 
-    <!-- ========================================== -->
-    <!-- 3. JAVASCRIPT MANTIĞI                      -->
-    <!-- ========================================== -->
     <script>
         // --- 1. SİSTEM BAŞLANGIÇ VERİLERİ ---
         const VARSAYILAN_BAKİYE = 1245890.00;
@@ -461,7 +442,8 @@
             eurBalance: 0.00,
             goldBalance: 0.00,
             islemler: VARSAYILAN_İŞLEMLER,
-            role: 'Admin'
+            role: 'Admin',
+            faturalar: [] // Fatura Listesi
         };
 
         let tumKullanicilar = JSON.parse(localStorage.getItem('tumKullanicilar'));
@@ -470,6 +452,11 @@
             localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
         }
 
+        // Kullanıcılarda fatura dizisi yoksa tanımla
+        tumKullanicilar.forEach(u => {
+            if (!u.faturalar) u.faturalar = [];
+        });
+
         let aktifKullaniciAdi = localStorage.getItem('aktifKullaniciAdi') || null;
         let c = tumKullanicilar.find(u => u.username === aktifKullaniciAdi) || adminUserObj;
 
@@ -477,6 +464,13 @@
 
         // Geri Bildirim Hafızası
         let tumFeedbackler = JSON.parse(localStorage.getItem('tumFeedbackler')) || [];
+
+        // Siber Güvenlik Log Hafızası & Yanlış Şifre Sayacı
+        let siberLoglar = JSON.parse(localStorage.getItem('siberLoglar')) || [
+            { id: 1, log: "[SİSTEM] Zolhin Güvenlik Duvarı Aktif Hale Getirildi.", tarih: "01 Haz 00:00", tip: "bilgi" }
+        ];
+        let hataliGirisDenemeleri = {}; 
+        let kilitliHesaplar = JSON.parse(localStorage.getItem('kilitliHesaplar')) || {};
 
 
         // --- 2. TEMA YÖNETİMİ ---
@@ -516,6 +510,19 @@
             localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
         }
 
+        function siberLogEkle(mesaj, tip = "uyari") {
+            siberLoglar.unshift({
+                id: Date.now(),
+                log: `[${tip.toUpperCase()}] ${mesaj}`,
+                tarih: anlikTarihUret(),
+                tip: tip
+            });
+            localStorage.setItem('siberLoglar', JSON.stringify(siberLoglar));
+            if (c && c.role === 'Admin') {
+                siberLoglariniGuncelle();
+            }
+        }
+
 
         // --- 4. FORMAT VE UI GÜNCELLEME ---
         function paraFormatla(deger) {
@@ -540,21 +547,28 @@
             document.getElementById('eurBalanceDisplay').innerText = c.eurBalance.toFixed(2) + " €";
             document.getElementById('goldBalanceDisplay').innerText = c.goldBalance.toFixed(2) + " gr";
 
-            // [ROL KONTROLÜ] Admin hariç hızlı para yükleme, kullanıcı listesi ve feedback alanlarını gizle
+            // Fatura Listesini Göster
+            faturaListesiniGuncelle();
+
+            // [ROL KONTROLÜ] Admin hariç hızlı para yükleme, kullanıcı listesi, siber log ve feedback alanlarını gizle
             const depositContainer = document.getElementById('quickDepositContainer');
             const feedbackContainer = document.getElementById('adminFeedbackContainer');
             const userManagementContainer = document.getElementById('adminUserManagementContainer');
+            const cyberSecurityContainer = document.getElementById('adminCyberSecurityContainer');
 
             if (c.role === 'Admin') {
                 depositContainer.classList.remove('hidden');
                 feedbackContainer.classList.remove('hidden');
                 userManagementContainer.classList.remove('hidden');
+                cyberSecurityContainer.classList.remove('hidden');
                 adminFeedbackListesiniGuncelle();
                 adminKullaniciListesiniGuncelle();
+                siberLoglariniGuncelle();
             } else {
                 depositContainer.classList.add('hidden');
                 feedbackContainer.classList.add('hidden');
                 userManagementContainer.classList.add('hidden');
+                cyberSecurityContainer.classList.add('hidden');
             }
 
             const listEl = document.getElementById('transactionsList');
@@ -590,6 +604,71 @@
             return `${String(d.getDate()).padStart(2, '0')} ${aylar[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         }
 
+        // Fatura Listesini HTML İçine Basma Fonksiyonu
+        function faturaListesiniGuncelle() {
+            const invoiceListEl = document.getElementById('userInvoiceList');
+            const badge = document.getElementById('invoiceCountBadge');
+            
+            if(!c.faturalar) c.faturalar = [];
+            badge.innerText = c.faturalar.length;
+            invoiceListEl.innerHTML = '';
+
+            if (c.faturalar.length === 0) {
+                invoiceListEl.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Ödenmemiş güncel faturanız bulunmamaktadır kanka.</p>`;
+                return;
+            }
+
+            c.faturalar.forEach((fatura, idx) => {
+                let ikon = "fa-bolt text-amber-400";
+                if(fatura.ad.includes("Su")) ikon = "fa-droplet text-blue-400";
+                if(fatura.ad.includes("Doğalgaz")) ikon = "fa-fire text-orange-400";
+                if(fatura.ad.includes("İnternet")) ikon = "fa-wifi text-indigo-400";
+
+                const html = `
+                    <div class="flex justify-between items-center bg-input-custom p-3 rounded-lg border border-gray-800/40 text-xs">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded bg-gray-800 flex items-center justify-center">
+                                <i class="fa-solid ${ikon}"></i>
+                            </div>
+                            <div>
+                                <span class="font-semibold text-custom-white">${fatura.ad}</span>
+                                <div class="text-[10px] text-gray-500">Son Gün: Anlık Simüle</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-mono font-bold text-rose-400">${paraFormatla(fatura.tutar)}</span>
+                            <button onclick="faturaOde(${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[11px] font-medium transition-colors">Öde</button>
+                        </div>
+                    </div>
+                `;
+                invoiceListEl.innerHTML += html;
+            });
+        }
+
+        // Fatura Ödeme Tetikleyicisi
+        window.faturaOde = function(idx) {
+            const fatura = c.faturalar[idx];
+            if (fatura.tutar > c.bakiye) {
+                alert('Faturayı ödemek için vadesiz TL bakiyeniz yetersiz kanka!');
+                return;
+            }
+
+            c.bakiye -= fatura.tutar;
+            c.islemler.unshift({
+                id: Date.now(),
+                baslik: `Fatura Ödemesi: ${fatura.ad}`,
+                tarih: anlikTarihUret(),
+                tutar: -fatura.tutar,
+                tip: "gider",
+                ikon: "fa-file-invoice-dollar"
+            });
+
+            c.faturalar.splice(idx, 1);
+            globalVerileriKaydet();
+            panelArayuzunuGuncelle();
+            alert(`${fatura.ad} başarıyla bakiyenizden ödendi kanka!`);
+        };
+
         // Admin Paneli İçin Geri Bildirimleri Listeleme Fonksiyonu
         function adminFeedbackListesiniGuncelle() {
             const listEl = document.getElementById('adminFeedbackList');
@@ -622,6 +701,25 @@
                     </div>
                 `;
                 listEl.innerHTML += fbHTML;
+            });
+        }
+
+        // Admin Paneli İçin Siber Güvenlik Loglarını Listeleme Fonksiyonu
+        function siberLoglariniGuncelle() {
+            const logListEl = document.getElementById('adminCyberLogsList');
+            logListEl.innerHTML = '';
+            
+            if(siberLoglar.length === 0) {
+                logListEl.innerHTML = `<div class="text-gray-600">Herhangi bir siber tehlike veya kayıt yok.</div>`;
+                return;
+            }
+
+            siberLoglar.forEach(l => {
+                let renk = "text-amber-400";
+                if(l.tip === "kritik") renk = "text-rose-500 font-bold";
+                if(l.tip === "bilgi") renk = "text-blue-400";
+                
+                logListEl.innerHTML += `<div class="py-0.5 ${renk}">[${l.tarih}] ${l.log}</div>`;
             });
         }
 
@@ -673,6 +771,9 @@
 
             localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
             
+            // Siber Log Kaydı Düş
+            siberLogEkle(`Admin panelinden @${targetUser.username} kullanıcısının hesap verileri el ile değiştirildi.`, "bilgi");
+
             // Eğer düzenlenen kişi o sırada aktif olan kişi ise c nesnesini de güncelle
             if (c.username === targetUser.username) {
                 c = targetUser;
@@ -685,6 +786,8 @@
         window.adminKullaniciSil = function(index) {
             const targetUser = tumKullanicilar[index];
             if (confirm(`@${targetUser.username} adlı kullanıcının hesabını tamamen silmek istediğine emin misin kanka? Geri dönüşü yoktur.`)) {
+                siberLogEkle(`Kritik İşlem: @${targetUser.username} adlı hesap sistem yöneticisi tarafından imha edildi!`, "kritik");
+                
                 tumKullanicilar.splice(index, 1);
                 localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
                 panelArayuzunuGuncelle();
@@ -714,6 +817,7 @@
         const registerForm = document.getElementById('registerForm');
         const dashboardPanel = document.getElementById('dashboardPanel');
         const loginError = document.getElementById('loginError');
+        const loginLockError = document.getElementById('loginLockError');
         const regError = document.getElementById('regError');
         const authSubtitle = document.getElementById('authSubtitle');
 
@@ -723,6 +827,7 @@
             registerForm.classList.remove('hidden');
             authSubtitle.innerText = "Yeni bir hesap oluşturun";
             loginError.classList.add('hidden');
+            loginLockError.classList.add('hidden');
         });
 
         document.getElementById('toLoginBtn').addEventListener('click', (e) => {
@@ -752,16 +857,48 @@
             const user = document.getElementById('loginUsername').value.trim();
             const pass = document.getElementById('loginPassword').value.trim();
 
+            // SİBER SALDIRI KORUMASI: Hesap Kilitli mi Kontrol Et
+            if (kilitliHesaplar[user]) {
+                const kalanSure = Math.round((kilitliHesaplar[user] - Date.now()) / 1000);
+                if (kalanSure > 0) {
+                    loginError.classList.add('hidden');
+                    loginLockError.classList.remove('hidden');
+                    siberLogEkle(`Engellenmiş Giriş: Kilitli olan @${user} hesabına siber giriş denemesi reddedildi.`, "kritik");
+                    return;
+                } else {
+                    // Kilidin süresi dolmuşsa kaldır
+                    delete kilitliHesaplar[user];
+                    localStorage.setItem('kilitliHesaplar', JSON.stringify(kilitliHesaplar));
+                    loginLockError.classList.add('hidden');
+                }
+            }
+
             const bulunanKullanici = tumKullanicilar.find(u => u.username === user && u.password === pass);
 
             if (bulunanKullanici) {
                 loginError.classList.add('hidden');
+                loginLockError.classList.add('hidden');
+                hataliGirisDenemeleri[user] = 0; // Sayacı sıfırla
+                
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('aktifKullaniciAdi', user);
                 c = bulunanKullanici; 
                 oturumAc();
             } else {
-                loginError.classList.remove('hidden');
+                // Hatalı Giriş Sayacını Artır
+                hataliGirisDenemeleri[user] = (hataliGirisDenemeleri[user] || 0) + 1;
+                siberLogEkle(`Hatalı Şifre: @${user} kullanıcı adı için şifre yanlış girildi! (Deneme: ${hataliGirisDenemeleri[user]}/3)`, "uyari");
+
+                if (hataliGirisDenemeleri[user] >= 3) {
+                    kilitliHesaplar[user] = Date.now() + 60000; // 1 Dakika kilitle
+                    localStorage.setItem('kilitliHesaplar', JSON.stringify(kilitliHesaplar));
+                    siberLogEkle(`GÜVENLİK TEHLİKESİ: Üst üste 3 hatalı deneme! @${user} hesabı 1 dakika süreyle siber koruma tarafından KİLİTLENDİ.`, "kritik");
+                    loginError.classList.add('hidden');
+                    loginLockError.classList.remove('hidden');
+                } else {
+                    loginLockError.classList.add('hidden');
+                    loginError.classList.remove('hidden');
+                }
             }
         });
 
@@ -797,11 +934,14 @@
                 islemler: [
                     { id: Date.now(), baslik: "Hesap Açılış Hediyesi", tarih: anlikTarihUret(), tutar: 10000.00, tip: "gelir", ikon: "fa-gift" }
                 ],
-                role: 'Müşteri'
+                role: 'Müşteri',
+                faturalar: []
             };
 
             tumKullanicilar.push(yeniKullanici);
             localStorage.setItem('tumKullanicilar', JSON.stringify(tumKullanicilar));
+
+            siberLogEkle(`Yeni Kayıt: Sistemde yeni bir kullanıcı oluşturuldu -> @${username}`, "bilgi");
 
             alert('Hesabın başarıyla oluşturuldu kanka! Giriş yapabilirsin.');
             registerForm.reset();
@@ -877,6 +1017,7 @@
 
             if (aliciKullanici) {
                 aliciKullanici.bakiye += miktar;
+                if(!aliciKullanici.islemler) aliciKullanici.islemler = [];
                 aliciKullanici.islemler.unshift({
                     id: Date.now() + 1,
                     baslik: `Gelen Transfer (${c.username}): ${aciklama}`,
@@ -885,8 +1026,10 @@
                     tip: "gelir",
                     ikon: "fa-wallet"
                 });
+                siberLogEkle(`Para Transferi: @${c.username} kullanıcısından @${aliciKullanici.username} kullanıcısına ${paraFormatla(miktar)} gönderildi.`, "bilgi");
                 alert(`Transfer başarıyla gerçekleştirildi! Tutar @${aliciKullanici.username} hesabına aktarıldı.`);
             } else {
+                siberLogEkle(`Dış Banka Gönderimi: @${c.username} bilinmeyen bir IBAN adresine ${paraFormatla(miktar)} transfer yaptı.`, "uyari");
                 alert('Dış Banka IBAN Transferi Başarıyla Gerçekleştirildi!');
             }
 
@@ -1003,7 +1146,39 @@
         }, 30000);
 
 
-        // --- 9. CANLI BORSA SİMÜLATÖRÜ (10s) ---
+        // --- 9. RASGELE FATURA SİMÜLASYON MOTORU (45 Saniye) ---
+        setInterval(() => {
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                const faturatürleri = ["⚡ Elektrik Faturası", "💧 Su Faturası", "🔥 Doğalgaz Faturası", "🌐 Fiber İnternet Faturası"];
+                const rastgeleAd = faturatürleri[Math.floor(Math.random() * faturatürleri.length)];
+                const rastgeleTutar = Math.floor(250 + Math.random() * 1250);
+
+                if(!c.faturalar) c.faturalar = [];
+                
+                // Kullanıcının birikmiş çok faturası yoksa yeni ekle (Maksimum 5 fatura birikebilir)
+                if(c.faturalar.length < 5) {
+                    c.faturalar.push({
+                        id: Date.now(),
+                        ad: rastgeleAd,
+                        tutar: rastgeleTutar
+                    });
+                    globalVerileriKaydet();
+                    
+                    // Arayüz açıksa canlı güncelle
+                    faturaListesiniGuncelle();
+
+                    // Toast Bildirimi Göster
+                    const fToast = document.getElementById('faturaToast');
+                    fToast.style.opacity = '1';
+                    setTimeout(() => {
+                        fToast.style.opacity = '0';
+                    }, 4000);
+                }
+            }
+        }, 45000);
+
+
+        // --- 10. CANLI BORSA SİMÜLATÖRÜ (10s) ---
         setInterval(() => {
             if (localStorage.getItem('isLoggedIn') === 'true') {
                 ['USD', 'EUR', 'GOLD'].forEach(asset => {
@@ -1027,7 +1202,7 @@
         }, 10000);
 
 
-        // --- 10. DÖVİZ EMİRLERİ ---
+        // --- 11. DÖVİZ EMİRLERİ ---
         document.getElementById('fxActionBtn').addEventListener('click', () => {
             const asset = document.getElementById('fxAsset').value;
             const type = document.getElementById('fxType').value;
@@ -1086,7 +1261,7 @@
         });
 
 
-        // --- 11. AYARLAR MODAL YÖNETİMİ ---
+        // --- 12. AYARLAR MODAL YÖNETİMİ ---
         const modal = document.getElementById('settingsModal');
         
         document.getElementById('openSettingsBtn').addEventListener('click', () => {
@@ -1117,7 +1292,7 @@
         });
 
 
-        // --- 12. GERİ BİLDİRİM (FEEDBACK) MODAL YÖNETİMİ ---
+        // --- 13. GERİ BİLDİRİM (FEEDBACK) MODAL YÖNETİMİ ---
         const fbModal = document.getElementById('feedbackModal');
 
         document.getElementById('openFeedbackBtn').addEventListener('click', () => {
